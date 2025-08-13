@@ -75,6 +75,8 @@ cc_binary(
         "@platforms//cpu:arm",
         "@platforms//os:none",
     ],
+
+    visibility = ["//visibility:public"],
 )
 
 genrule(
