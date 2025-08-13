@@ -69,3 +69,8 @@ venv.bak/
 node_modules/
 
 bazel*
+
+*.vscode
+.cache
+build/
+.stm32env
