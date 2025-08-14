@@ -1,4 +1,7 @@
-# VCU Firmware and Model
+# Vehicle Control Unit (VCU) Firmware and Model
+
+The Vehicle Control Unit (VCU) manages the car's state and rules requirements. It also manages the entire torque path between
+digitized driver pedal inputs and outputs.
 
 VCU Firmware will live in the `VCU/Firmware` directory, while the model files will be located in the `VCU/Model` directory.
 
