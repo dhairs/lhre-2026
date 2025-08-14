@@ -74,3 +74,4 @@ bazel*
 .cache
 build/
 .stm32env
+compile_commands.json
