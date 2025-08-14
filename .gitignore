@@ -76,3 +76,5 @@ build/
 .stm32env
 compile_commands.json
 external/
+/VCU/firmware/Drivers
+VCU/firmware/.mxproject
