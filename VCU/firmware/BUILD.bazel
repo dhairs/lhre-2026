@@ -1,14 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-
-filegroup(
-    name = "linker_script",
-    srcs = ["stm32g474vetx_flash.ld"],
-)
-
-filegroup(
-    name = "startup_file",
-    srcs = ["startup_stm32g474xx.s"],
-)
+load("//:tools/bazel/build_outputs.bzl", "binary_out", "hex_out")
 
 cc_binary(
     name = "vcu_firmware_2026",
@@ -37,25 +28,16 @@ cc_binary(
         "USB_DEVICE/Target",
         "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
         "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
+        "Middlewares/Third_Party/FreeRTOS/Source/include",
+        "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+        "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
         "//longhorn-lib:longhorn_lib"
-    ],
-
-    # Compiler options
-    copts = [
-        "-mcpu=cortex-m4",
-        "-mthumb",
-        "-mthumb-interwork",
-        "-ffunction-sections",
-        "-fdata-sections",
     ],
 
     # Linker options
     linkopts = [
-        "-T $(location :linker_script)",
-        "$(location :startup_file)",
-        "-Wl,-Map=output.map",
-        "-Wl,--gc-sections",
-        "-Wl,--no-warn-rwx-segments",
+        "-T $(location //toolchain:stm32g474vetx_flash_script)",
+        "$(location //toolchain:stm32g474_startup)",
     ],
 
     # Defines for the C preprocessor
@@ -66,8 +48,8 @@ cc_binary(
     ],
 
     additional_linker_inputs = [
-        ":linker_script",
-        ":startup_file",
+        "//toolchain:stm32g474vetx_flash_script",
+        "//toolchain:stm32g474_startup",
     ],
 
     # Target platform constraints
@@ -79,20 +61,12 @@ cc_binary(
     visibility = ["//visibility:public"],
 )
 
-genrule(
-    name = "bin",
-    srcs = [":vcu_firmware_2026"],
-    outs = ["vcu_firmware_2026.bin"],
-    cmd = "$(execpath @arm_none_eabi//:objcopy) -O binary $< $@",
-    cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O binary $< $@",
-    tools = ["@arm_none_eabi//:objcopy"],
+binary_out(
+    name = "vcu_firmware_bin",
+    src = ":vcu_firmware_2026"
 )
 
-genrule(
-    name = "hex",
-    srcs = [":vcu_firmware_2026"],
-    outs = ["vcu_firmware_2026.hex"],
-    cmd = "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $@",
-    cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
-    tools = ["@arm_none_eabi//:objcopy"],
+hex_out(
+    name = "vcu_firmare_hex",
+    src = ":vcu_firmware_2026"
 )
