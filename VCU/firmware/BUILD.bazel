@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//:tools/bazel/build_outputs.bzl", "binary_out", "hex_out")
+load("//:tools/outputs/build_outputs.bzl", "binary_out", "hex_out")
 
 cc_binary(
     name = "vcu_firmware_2026",
