@@ -1,0 +1,28 @@
+name: presubmit
+run-name: Presubmit run triggered by ${{ github.actor }}
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  bazel-build-test:
+    name: Bazel Presubmit Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Get Bazel
+        uses: bazel-contrib/setup-bazel@0.8.1
+        with:
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
+          repository-cache: true
+      - name: Build All
+        run: bazel build //...
+      - name: Test All
+        run: bazel test //...

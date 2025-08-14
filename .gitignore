@@ -67,3 +67,12 @@ venv.bak/
 
 # Node
 node_modules/
+
+bazel*
+
+*.vscode
+.cache
+build/
+.stm32env
+compile_commands.json
+external/
