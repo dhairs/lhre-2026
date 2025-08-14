@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 jobs:
   bazel-build-test:
+    name: Bazel Presubmit Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
