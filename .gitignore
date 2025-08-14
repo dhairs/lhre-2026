@@ -75,3 +75,4 @@ bazel*
 build/
 .stm32env
 compile_commands.json
+external/
