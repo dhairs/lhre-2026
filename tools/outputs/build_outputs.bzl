@@ -51,7 +51,44 @@ MCU_FLAGS = [
     "-mfloat-abi=hard",
 ]
   
-def firmware_project(name, linker_script, startup_script, defines = [], extra_srcs = [], **kwargs):
+def firmware_project_g4(name, linker_script, startup_script, enable_usb = False, 
+                            defines = [], extra_srcs = [], extra_deps = [], 
+                            usb_device_name = None, extra_includes = [], 
+                            enable_freertos = False, **kwargs):
+  """Creates a firmware project for the STM32G4 family of chips.
+
+  Args:
+      name (string): name of the project
+      linker_script (path): the location of the linker script being used (.ld file)
+      startup_script (path): the location of the startup script being used (.s file)
+      enable_usb (bool, optional): Whether or not to use USB drivers. Defaults to False.
+      defines (list, optional): defines to pass to the compiler. Defaults to [].
+      extra_srcs (list, optional): extra sources to compile with. Defaults to [].
+      extra_deps (list, optional): extra dependencies to compile with. Defaults to [].
+      usb_device_name (_type_, optional): name you want the USB driver to have. Defaults to None.
+      extra_includes (list, optional): extra include paths to compile with. Defaults to [].
+      enable_freertos (bool, optional): Whether or not to use FreeRTOS. Defaults to False.
+      **kwargs: extra args to pass to cc_binary.
+  """
+
+  if(usb_device_name == None):
+    usb_device_name = name
+  
+  if(extra_deps == []):
+    extra_deps = []
+
+  if(extra_srcs == []):
+    extra_srcs = []
+
+  if(enable_usb):
+    extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
+    extra_deps.append("//drivers/stm32g4:usb_device_headers")
+    defines.append('USB_DEVICE_NAME_TOKEN="ELC ' + usb_device_name + '"')
+
+  if(enable_freertos):
+    extra_srcs.append("//drivers/stm32g4:freertos_srcs")
+    extra_deps.append("//drivers/stm32g4:freertos_headers")
+
   cc_binary(
     name = name,
     srcs = native.glob([
@@ -65,26 +102,30 @@ def firmware_project(name, linker_script, startup_script, defines = [], extra_sr
 
     includes = [
         "Core/Inc",
-    ],
+    ] + extra_includes,
 
-    deps = [
+    deps = extra_deps + [
         "//drivers/stm32g4:stm32_headers",
     ],
 
     # Linker options, also includes the reset handler startup file
     linkopts = MCU_FLAGS + [
-        "-Wl,-Map=output.map",
+        "-Wl,-Map=output.map,--cref",
         "-Wl,--gc-sections",
         "-Wl,--no-warn-rwx-segments",
-        "-T $(location " + linker_script +")",
-        "$(location " + startup_script +")",
+        "-T $(location " + name + "_link_script" + ")",
+        "$(location " + name + "_startup_script" + ")",
+        "-specs=nano.specs",
+        "-lnosys",
+        "-lc",
+        "-lm"
     ],
 
-    defines = defines,
+    defines = defines + ["USE_HAL_DRIVER"],
 
     additional_linker_inputs = [
-        linker_script,
-        startup_script,
+        name + "_link_script",
+        name + "_startup_script",
     ],
 
     target_compatible_with = [
@@ -96,9 +137,33 @@ def firmware_project(name, linker_script, startup_script, defines = [], extra_sr
         "-mthumb-interwork",
         "-ffunction-sections",
         "-fdata-sections",
+        "-Og"
     ],
   
     visibility = ["//visibility:public"],
 
+    features = ["generate_linkmap"],
+
     **kwargs
-)
+  )
+
+  native.filegroup(
+    name = name + ".out.map",
+    srcs = [":" + name],
+    output_group = "linkmap",
+  )
+
+  native.filegroup(
+    name = name + "_link_script",
+    srcs = [linker_script],
+  )
+
+  native.filegroup(
+    name = name + "_startup_script",
+    srcs = [startup_script],
+  )
+
+  binary_out(
+    name = name + "_bin",
+    src = name,
+  )
