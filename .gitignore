@@ -82,3 +82,5 @@ VCU/firmware/.mxproject
 .mxproject
 /.clwb
 /VCU/firmware/Middlewares
+
+!drivers/stm32g4/USB_Device/Target
