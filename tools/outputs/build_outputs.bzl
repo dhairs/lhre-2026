@@ -1,7 +1,7 @@
 """Macro for creating binary and hex files using objcopy."""
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup", "platform_transition_binary")
 
 def firmware_outputs(name, src, visibility = None, **kwargs):
     """
@@ -11,6 +11,9 @@ def firmware_outputs(name, src, visibility = None, **kwargs):
     bin_out = name + ".bin"
     hex_out = name + ".hex"
 
+    command = ("$(execpath @arm_none_eabi//:objcopy) -O binary $< $(location %s) && " +
+               "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $(location %s)") % (bin_out, hex_out)
+
     native.genrule(
         name = name,
         srcs = [src],
@@ -18,13 +21,7 @@ def firmware_outputs(name, src, visibility = None, **kwargs):
             bin_out,
             hex_out,
         ],
-        cmd = ("$(execpath @arm_none_eabi//:objcopy) -O binary $< $(location %s) && " +
-               "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $(location %s)") % (bin_out, hex_out),
-
-        cmd_bat = ("copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && " +
-                   "objcopy.exe -O binary $< %s && " +
-                   "objcopy.exe -O ihex $< %s") % (bin_out, hex_out),
-
+        cmd = command,
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
         **kwargs
