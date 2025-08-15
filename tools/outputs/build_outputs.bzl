@@ -51,8 +51,32 @@ MCU_FLAGS = [
     "-mfloat-abi=hard",
 ]
   
-def firmware_project(name, linker_script, startup_script, defines = [], 
-                        extra_srcs = [], extra_deps = [], extra_includes = [], **kwargs):
+def firmware_project_g4(name, linker_script, startup_script, enable_usb = False, 
+                            defines = [], extra_srcs = [], extra_deps = [], 
+                                usb_device_name = None, extra_includes = [], **kwargs):
+  """Creates a firmware project for the STM32G4 family of chips.
+
+  Args:
+      name (string): name of the project
+      linker_script (path): the location of the linker script being used (.ld file)
+      startup_script (path): the location of the startup script being used (.s file)
+      enable_usb (bool, optional): Whether or not to use USB drivers. Defaults to False.
+      defines (list, optional): defines to pass to the compiler. Defaults to [].
+      extra_srcs (list, optional): extra sources to compile with. Defaults to [].
+      extra_deps (list, optional): extra dependencies to compile with. Defaults to [].
+      usb_device_name (_type_, optional): name you want the USB driver to have. Defaults to None.
+      extra_includes (list, optional): extra include paths to compile with. Defaults to [].
+      **kwargs: extra args to pass to cc_binary.
+  """
+
+  if(usb_device_name == None):
+    usb_device_name = name
+
+  if(enable_usb):
+    extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
+    extra_deps.append("//drivers/stm32g4:usb_device_headers")
+    defines.append('USB_DEVICE_NAME_TOKEN="' + usb_device_name + '"')
+
   cc_binary(
     name = name,
     srcs = native.glob([

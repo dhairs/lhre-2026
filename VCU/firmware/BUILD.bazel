@@ -1,11 +1,10 @@
-load("//:tools/outputs/build_outputs.bzl", "binary_out", "hex_out", "firmware_project")
+load("//:tools/outputs/build_outputs.bzl", "binary_out", "hex_out", "firmware_project_g4")
 
-firmware_project(
+firmware_project_g4(
     name = "vcu_firmware_2026",
     linker_script = "//toolchain:stm32g474vetx_flash_script",
     startup_script = "//toolchain:stm32g474_startup",
     defines = [
-        "DEBUG",
         "USE_HAL_DRIVER",
         "STM32G474xx",
     ],
@@ -15,7 +14,8 @@ firmware_project(
 
     extra_deps = [
         "//drivers/stm32g4:freertos_headers",
-    ]
+    ],
+    enable_usb = True,
 )
 
 binary_out(
