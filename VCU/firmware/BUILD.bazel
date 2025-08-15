@@ -1,48 +1,14 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//:tools/outputs/build_outputs.bzl", "binary_out", "hex_out")
+load("//:tools/outputs/build_outputs.bzl", "binary_out", "hex_out", "firmware_project")
 
-cc_binary(
+firmware_project(
     name = "vcu_firmware_2026",
-    srcs = glob([
-        "Core/Src/**/*.c",
-        "Core/Inc/**/*.h",
-    ], allow_empty = True)
-    + [
-        # Include the HAL for compilation
-        "//drivers/stm32g4:hal_srcs",
-    ],
-
-    includes = [
-        "Core/Inc",
-    ],
-
-    deps = [
-        "//drivers/stm32g4:stm32_headers",
-    ],
-
-    # Linker options, also includes the reset handler startup file
-    linkopts = [
-        "-T $(location //toolchain:stm32g474vetx_flash_script)",
-        "$(location //toolchain:stm32g474_startup)",
-    ],
-
+    linker_script = "//toolchain:stm32g474vetx_flash_script",
+    startup_script = "//toolchain:stm32g474_startup",
     defines = [
         "DEBUG",
         "USE_HAL_DRIVER",
         "STM32G474xx",
     ],
-
-    additional_linker_inputs = [
-        "//toolchain:stm32g474vetx_flash_script",
-        "//toolchain:stm32g474_startup",
-    ],
-
-    target_compatible_with = [
-        "@platforms//cpu:arm",
-        "@platforms//os:none",
-    ],
-
-    visibility = ["//visibility:public"],
 )
 
 binary_out(
