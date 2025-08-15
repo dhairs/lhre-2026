@@ -113,8 +113,8 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
         "-Wl,-Map=output.map,--cref",
         "-Wl,--gc-sections",
         "-Wl,--no-warn-rwx-segments",
-        "-T $(location " + linker_script +")",
-        "$(location " + startup_script +")",
+        "-T $(location " + name + "_link_script" + ")",
+        "$(location " + name + "_startup_script" + ")",
         "-specs=nano.specs",
         "-lnosys",
         "-lc",
@@ -124,8 +124,8 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     defines = defines + ["USE_HAL_DRIVER"],
 
     additional_linker_inputs = [
-        linker_script,
-        startup_script,
+        name + "_link_script",
+        name + "_startup_script",
     ],
 
     target_compatible_with = [
@@ -151,6 +151,16 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     name = name + ".out.map",
     srcs = [":" + name],
     output_group = "linkmap",
+  )
+
+  native.filegroup(
+    name = name + "_link_script",
+    srcs = [linker_script],
+  )
+
+  native.filegroup(
+    name = name + "_startup_script",
+    srcs = [startup_script],
   )
 
   binary_out(

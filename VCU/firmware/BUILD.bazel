@@ -2,8 +2,8 @@ load("//:tools/outputs/build_outputs.bzl", "firmware_project_g4")
 
 firmware_project_g4(
     name = "vcu_firmware_2026",
-    linker_script = "//toolchain:stm32g474vetx_flash_script",
-    startup_script = "//toolchain:stm32g474_startup",
+    linker_script = "stm32g474vetx_flash.ld",
+    startup_script = "startup_stm32g474xx.s",
     defines = [
         "STM32G474xx",
     ],
