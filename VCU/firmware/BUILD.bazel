@@ -16,6 +16,7 @@ firmware_project_g4(
         "//drivers/stm32g4:freertos_headers",
     ],
     enable_usb = True,
+    usb_device_name = "Vehicle Control Unit"
 )
 
 binary_out(
