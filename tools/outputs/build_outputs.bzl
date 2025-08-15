@@ -53,7 +53,8 @@ MCU_FLAGS = [
   
 def firmware_project_g4(name, linker_script, startup_script, enable_usb = False, 
                             defines = [], extra_srcs = [], extra_deps = [], 
-                                usb_device_name = None, extra_includes = [], **kwargs):
+                            usb_device_name = None, extra_includes = [], 
+                            enable_freertos = False, **kwargs):
   """Creates a firmware project for the STM32G4 family of chips.
 
   Args:
@@ -66,16 +67,27 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
       extra_deps (list, optional): extra dependencies to compile with. Defaults to [].
       usb_device_name (_type_, optional): name you want the USB driver to have. Defaults to None.
       extra_includes (list, optional): extra include paths to compile with. Defaults to [].
+      enable_freertos (bool, optional): Whether or not to use FreeRTOS. Defaults to False.
       **kwargs: extra args to pass to cc_binary.
   """
 
   if(usb_device_name == None):
     usb_device_name = name
+  
+  if(extra_deps == []):
+    extra_deps = []
+
+  if(extra_srcs == []):
+    extra_srcs = []
 
   if(enable_usb):
     extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
     extra_deps.append("//drivers/stm32g4:usb_device_headers")
-    defines.append('USB_DEVICE_NAME_TOKEN="' + usb_device_name + '"')
+    defines.append('USB_DEVICE_NAME_TOKEN="ELC ' + usb_device_name + '"')
+
+  if(enable_freertos):
+    extra_srcs.append("//drivers/stm32g4:freertos_srcs")
+    extra_deps.append("//drivers/stm32g4:freertos_headers")
 
   cc_binary(
     name = name,
@@ -109,7 +121,7 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
         "-lm"
     ],
 
-    defines = defines,
+    defines = defines + ["USE_HAL_DRIVER"],
 
     additional_linker_inputs = [
         linker_script,
@@ -139,4 +151,9 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     name = name + ".out.map",
     srcs = [":" + name],
     output_group = "linkmap",
+  )
+
+  binary_out(
+    name = name + "_bin",
+    src = name,
   )
