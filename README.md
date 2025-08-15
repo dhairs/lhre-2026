@@ -21,6 +21,16 @@ To build all targets: `bazel build //...` (will only build firmware by default)
 
 To test all targets: `bazel test //...` (will only test firmware by default)
 
+## Updating Intellisense
+
+To update Intellisense in VS Code, simply run the following command from the root of the repository:
+
+```bash
+bazel run @hedron_compile_commands//:refresh_all
+```
+
+Then, make sure that your VS Code is pointing to the `compile_commands.json` file that is generated.
+
 ## Contributing
 
 Note: Code cannot be pushed directly to the main branch.
