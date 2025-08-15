@@ -74,13 +74,15 @@ def firmware_project(name, linker_script, startup_script, defines = [],
 
     # Linker options, also includes the reset handler startup file
     linkopts = MCU_FLAGS + [
-        "-Wl,-Map=output.map",
+        "-Wl,-Map=output.map,--cref",
         "-Wl,--gc-sections",
         "-Wl,--no-warn-rwx-segments",
         "-T $(location " + linker_script +")",
         "$(location " + startup_script +")",
         "-specs=nano.specs",
-        "-lnosys"
+        "-lnosys",
+        "-lc",
+        "-lm"
     ],
 
     defines = defines,
@@ -104,5 +106,13 @@ def firmware_project(name, linker_script, startup_script, defines = [],
   
     visibility = ["//visibility:public"],
 
+    features = ["generate_linkmap"],
+
     **kwargs
-)
+  )
+
+  native.filegroup(
+    name = name + ".out.map",
+    srcs = [":" + name],
+    output_group = "linkmap",
+  )
