@@ -31,3 +31,32 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_library(
+    name = "freertos_headers",
+    hdrs = glob([
+        "FreeRTOS/include/**/*.h",
+        "FreeRTOS/portable/GCC/ARM_CM4F/**/*.h",
+        "FreeRTOS/CMSIS_RTOS_V2/*.h",
+    ]),
+
+    includes = [
+        "FreeRTOS/include",
+        "FreeRTOS/CMSIS_RTOS_V2",
+        "FreeRTOS/portable/GCC/ARM_CM4F",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "freertos_srcs",
+    srcs = [
+        "FreeRTOS/CMSIS_RTOS_V2/cmsis_os2.c",
+        "FreeRTOS/portable/MemMang/heap_4.c",
+        "FreeRTOS/portable/GCC/ARM_CM4F/port.c",
+        ] + glob([
+        "FreeRTOS/*.c",
+        ],         
+    ),
+    visibility = ["//visibility:public"],
+)

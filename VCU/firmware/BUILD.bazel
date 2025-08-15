@@ -9,6 +9,13 @@ firmware_project(
         "USE_HAL_DRIVER",
         "STM32G474xx",
     ],
+    extra_srcs = [
+        "//drivers/stm32g4:freertos_srcs",
+    ],
+
+    extra_deps = [
+        "//drivers/stm32g4:freertos_headers",
+    ]
 )
 
 binary_out(

@@ -80,3 +80,5 @@ external/
 VCU/firmware/.mxproject
 
 .mxproject
+/.clwb
+/VCU/firmware/Middlewares

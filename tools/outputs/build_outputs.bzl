@@ -51,7 +51,8 @@ MCU_FLAGS = [
     "-mfloat-abi=hard",
 ]
   
-def firmware_project(name, linker_script, startup_script, defines = [], extra_srcs = [], **kwargs):
+def firmware_project(name, linker_script, startup_script, defines = [], 
+                        extra_srcs = [], extra_deps = [], extra_includes = [], **kwargs):
   cc_binary(
     name = name,
     srcs = native.glob([
@@ -65,9 +66,9 @@ def firmware_project(name, linker_script, startup_script, defines = [], extra_sr
 
     includes = [
         "Core/Inc",
-    ],
+    ] + extra_includes,
 
-    deps = [
+    deps = extra_deps + [
         "//drivers/stm32g4:stm32_headers",
     ],
 
