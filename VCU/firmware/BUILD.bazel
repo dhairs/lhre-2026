@@ -16,7 +16,7 @@ binary_out(
     src = ":vcu_firmware_2026"
 )
 
-# hex_out(
-#     name = "vcu_firmware_hex",
-#     src = ":vcu_firmware_2026"
-# )
+hex_out(
+    name = "vcu_firmware_hex",
+    src = ":vcu_firmware_2026"
+)
