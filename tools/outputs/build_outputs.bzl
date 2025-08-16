@@ -3,13 +3,13 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup", "platform_transition_binary")
 
-def firmware_outputs(name, src, visibility = None, **kwargs):
+def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
     """
     Runs objcopy to convert a source file into both .bin and .hex files.
     """
     # Define the output filenames based on the rule's name
-    bin_out = name + ".bin"
-    hex_out = name + ".hex"
+    bin_out = project_name + ".bin"
+    hex_out = project_name + ".hex"
 
     command = ("$(execpath @arm_none_eabi//:objcopy) -O binary $< $(location %s) && " +
                "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $(location %s)") % (bin_out, hex_out)
@@ -198,4 +198,5 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
   firmware_outputs(
     name = name + "_out",
     src = name,
+    project_name = name,
   )
