@@ -14,8 +14,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: "Install Bazel"
-        uses: bazelbuild/setup-bazel@v1.1.0
+      - name: Get Bazel
+        uses: bazel-contrib/setup-bazel@0.8.1
+        with:
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
+          repository-cache: true
 
       - name: Build Release Artifacts
         id: build
@@ -27,7 +34,6 @@ jobs:
           echo "::set-output name=artifact_name::$(basename ${ARTIFACT_PATH})"
 
       - name: Create Release
-        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,16 +41,20 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
+            ${{ github.event.head_commit.message }}
             New release for ${{ github.ref }}
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      - name: Build and Upload Release Artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.build.outputs.artifact_path }}
-          asset_name: ${{ steps.build.outputs.artifact_name }}
-          asset_content_type: application/octet-stream
+        run: |
+          PROJECT_NAME=$(echo ${{ github.ref_name }} | cut -d/ -f1)
+          bazel build //${PROJECT_NAME}/firmware:release
+
+          echo "Uploading assets..."
+          for file in $(bazel cquery --output=files //${PROJECT_NAME}/firmware:release); do
+            echo "Uploading $file"
+            gh release upload ${{ github.ref_name }} "$file" --clobber
+          done
