@@ -200,3 +200,8 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     src = name,
     project_name = name,
   )
+
+  native.filegroup (
+    name = "release",
+    srcs = [name + "_out"],
+  )

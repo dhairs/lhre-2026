@@ -1,0 +1,50 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    tags:
+      - "**/v*"
+      - "**/v*"
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: "Install Bazel"
+        uses: bazelbuild/setup-bazel@v1.1.0
+
+      - name: Build Release Artifacts
+        id: build
+        run: |
+          PROJECT_NAME=$(echo ${{ github.ref_name }} | cut -d/ -f1)
+          bazel build //${PROJECT_NAME}/firmware:release
+          ARTIFACT_PATH=$(bazel cquery --output=files //${PROJECT_NAME}/firmware:release)
+          echo "::set-output name=artifact_path::${ARTIFACT_PATH}"
+          echo "::set-output name=artifact_name::$(basename ${ARTIFACT_PATH})"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            New release for ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.build.outputs.artifact_path }}
+          asset_name: ${{ steps.build.outputs.artifact_name }}
+          asset_content_type: application/octet-stream
