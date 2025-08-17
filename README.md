@@ -31,6 +31,19 @@ bazel run @hedron_compile_commands//:refresh_all
 
 Then, make sure that your VS Code is pointing to the `compile_commands.json` file that is generated.
 
+## Releases
+
+To publish a release, all you need to do is create a new Git tag for the project release version. This can be done using the following command:
+
+```bash
+git tag -a <Project_Name>/vX.Y.Z -m "Description of this release"
+git push origin <Project_Name>/vX.Y.Z
+```
+
+Replace `<Project_Name>` with the bazel package of the project. Note that the
+project has to have a `:release` target. In the VCU firmware's case, we would
+use `VCU/firmware/v.X.Y.X`. Replace `X.Y.Z` with the desired version number.
+
 ## Contributing
 
 Note: Code cannot be pushed directly to the main branch.
