@@ -27,9 +27,10 @@ jobs:
       - name: Build Release Artifacts
         id: build
         run: |
-          PROJECT_NAME=$(echo ${{ github.ref_name }} | cut -d/ -f1)
-          bazel build //${PROJECT_NAME}/firmware:release
-          ARTIFACT_PATH=$(bazel cquery --output=files //${PROJECT_NAME}/firmware:release)
+          FULL_TAG="${{ github.ref_name }}"
+          PROJECT_NAME="${FULL_TAG%/*}"
+          bazel build //${PROJECT_NAME}:release
+          ARTIFACT_PATH=$(bazel cquery --output=files //${PROJECT_NAME}:release)
           echo "::set-output name=artifact_path::${ARTIFACT_PATH}"
           echo "::set-output name=artifact_name::$(basename ${ARTIFACT_PATH})"
 
