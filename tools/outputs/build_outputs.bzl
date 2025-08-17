@@ -137,7 +137,6 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     linkopts = MCU_FLAGS + [
         "-Wl,-Map=output.map,--cref",
         "-Wl,--gc-sections",
-        "-Wl,--no-warn-rwx-segments",
         "-T $(location " + name + "_link_script" + ")",
         "$(location " + name + "_startup_script" + ")",
         "-specs=nano.specs",
