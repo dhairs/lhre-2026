@@ -1,11 +1,18 @@
 """Macro for creating binary and hex files using objcopy."""
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup", "platform_transition_binary")
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 
 def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
     """
     Runs objcopy to convert a source file into both .bin and .hex files.
+
+    Args:
+      name: The name of the output target.
+      src: The label of the single source file to convert.
+      project_name: The name of the project.
+      visibility: visibility of the target,
+      **kwargs: extra args to pass to genrule.
     """
     # Define the output filenames based on the rule's name
     bin_out = project_name + ".bin"
@@ -137,8 +144,8 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     linkopts = MCU_FLAGS + [
         "-Wl,-Map=output.map,--cref",
         "-Wl,--gc-sections",
-        "-T $(location " + name + "_link_script" + ")",
-        "$(location " + name + "_startup_script" + ")",
+        "-T $(location " + linker_script + ")",
+        "$(location " + startup_script + ")",
         "-specs=nano.specs",
         "-lnosys",
         "-lc",
@@ -148,8 +155,8 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     defines = defines + ["USE_HAL_DRIVER"],
 
     additional_linker_inputs = [
-        name + "_link_script",
-        name + "_startup_script",
+        linker_script,
+        startup_script,
     ],
 
     target_compatible_with = [
@@ -175,16 +182,6 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     name = name + ".out.map",
     srcs = [":" + name],
     output_group = "linkmap",
-  )
-
-  native.filegroup(
-    name = name + "_link_script",
-    srcs = [linker_script],
-  )
-
-  native.filegroup(
-    name = name + "_startup_script",
-    srcs = [startup_script],
   )
 
   platform_transition_filegroup(
