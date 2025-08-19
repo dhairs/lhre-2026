@@ -2,6 +2,7 @@
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
     """
@@ -254,37 +255,22 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     release_srcs.append(target_name + "_bin")
     release_srcs.append(target_name + "_hex")
 
-    # native.genrule(
-    #   name = "flash",
-    #   # The firmware file is a source for this rule.
-    #   srcs = [
-    #       target_name + "_out",
-    #       # We also depend on the entire script directory from our tool.
-    #       # "@openocd//:scripts",
-    #   ],
-    #   # The OpenOCD executable is a "tool" for this rule. Bazel makes it
-    #   # available in the execution environment.
-    #   tools = ["@openocd//:openocd"],
-    #   # We create a dummy output file because genrules must create an output.
-    #   outs = ["flash.log"],
-    #   # This command is executed when you run `bazel run //src/firmware:flash`.
-    #   #
-    #   # - $(location ...) is the Bazel way to get the path to a dependency.
-    #   # - The -s flag tells OpenOCD where to find its scripts, which makes
-    #   #   the rule hermetic (it doesn't depend on a system-wide install).
-    #   cmd = """
-    #       $(location @openocd//:openocd) \
-              
-    #           -f interface/stlink.cfg \
-    #           -f target/stm32f4x.cfg \
-    #           -c "program $(locations :%s) verify reset exit" \
-    #           > $@
-    #   """ % (target_name + "_out"),
-    #   # This tag is important! It tells Bazel that this rule has side-effects
-    #   # (flashing hardware) and should not be cached. It also allows access
-    #   # to local devices.
-    #   tags = ["local"],
-    # )
+    sh_binary(
+      name = target_name + "_openocd",
+      srcs = ["//tools/openocd:openocd_flashing_script"],
+      data = [
+          ":" + target_name + "_elf",
+          "@openocd//:openocd",
+          "@openocd//:scripts",
+          "//tools/openocd:g4_flashing_cfg",
+        ],
+
+      args = [
+        "$(location @openocd//:openocd)",
+        "$(location :" + target_name + "_elf" + ")",
+        "$(location //tools/openocd:g4_flashing_cfg)",
+      ],
+    )
 
   native.filegroup (
     name = "release",

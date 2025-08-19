@@ -1,9 +1,13 @@
 """OpenOCD for Flashing"""
 
-# load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-
-sh_binary(
-    name = "openocd_flash",
+filegroup(
+    name = "openocd_flashing_script",
     srcs = ["flash.sh"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "g4_flashing_cfg",
+    srcs = ["stm32g4.cfg"],
     visibility = ["//visibility:public"],
 )

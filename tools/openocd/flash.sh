@@ -8,8 +8,7 @@ set -e
 # $3: Path to the root of the openocd scripts directory
 OPENOCD_EXE="$1"
 FIRMWARE_ELF="$2"
-SCRIPTS_DIR="$3"
-OPENOCD_CFG="$4"
+OPENOCD_CFG="$3"
 
 # The location of the scripts filegroup points to .../share/openocd/scripts
 # The openocd `-s` flag needs the directory that CONTAINS the `scripts` folder.
@@ -19,13 +18,11 @@ SCRIPTS_SEARCH_PATH="${SCRIPTS_DIR}/.."
 echo "--- Flashing Firmware ---"
 echo "OpenOCD Executable: ${OPENOCD_EXE}"
 echo "Firmware: ${FIRMWARE_ELF}"
-echo "Script Search Path: ${SCRIPTS_SEARCH_PATH}"
 echo "OpenOCD Config: ${OPENOCD_CFG}"
 echo "-------------------------"
 
 # --- Execute the command ---
 "${OPENOCD_EXE}" \
-    -s "${SCRIPTS_SEARCH_PATH}" \
     -f ${OPENOCD_CFG} \
     -c "program \"${FIRMWARE_ELF}\" verify reset exit"
 
