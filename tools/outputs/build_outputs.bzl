@@ -49,9 +49,9 @@ def binary_out(name, src, visibility = None, **kwargs):
       **kwargs: Additional arguments to pass to the underlying genrule.
     """
     native.genrule(
-        name = name,
+        name = name + "_bin",
         srcs = [src],
-        outs = [src + ".bin"],
+        outs = [name + ".bin"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O binary $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
@@ -69,9 +69,9 @@ def hex_out(name, src, visibility = None, **kwargs):
       **kwargs: Additional arguments to pass to the underlying genrule.
     """
     native.genrule(
-        name = name,
+        name = name + "_hex",
         srcs = [src],
-        outs = [src + ".hex"],
+        outs = [name + ".hex"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $@",
         # cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
@@ -90,9 +90,9 @@ def elf_out(name, src, visibility = None, **kwargs):
       **kwargs: Additional arguments to pass to the underlying genrule.
     """
     native.genrule(
-        name = name,
+        name = name + "_elf",
         srcs = [src],
-        outs = [src + ".elf"],
+        outs = [name + ".elf"],
         cmd = "cp $< $@",
         cmd_bat = "copy $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
@@ -236,44 +236,46 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     #   project_name = project_name, # Pass the unique project name for file naming
     # )
     elf_out(
-      name = target_name + "_elf",
+      name = project_name,
       src = target_name,
       visibility = ["//visibility:public"],
     )
     hex_out(
-      name = target_name + "_hex",
+      name = project_name,
       src = target_name,
       visibility = ["//visibility:public"],
     )
     binary_out(
-      name = target_name + "_bin",
+      name = project_name,
       src = target_name,
       visibility = ["//visibility:public"],
     )
 
-    release_srcs.append(target_name + "_elf")
-    release_srcs.append(target_name + "_bin")
-    release_srcs.append(target_name + "_hex")
+    release_srcs.append(target_name + ".elf")
+    release_srcs.append(target_name + ".bin")
+    release_srcs.append(target_name + ".hex")
 
     py_binary(
       name = ("openocd_" + location) if location else "openocd",
       srcs = ["//tools/openocd:openocd_flashing_script"],
       main = "flash.py",
       data = [
-          ":" + target_name + "_elf",
+          ":" + target_name + ".elf",
           "@openocd//:openocd",
           "//tools/openocd:g4_flashing_cfg",
         ],
 
       args = [
         "$(rlocationpath @openocd//:openocd)",
-        "$(rlocationpath :" + target_name + "_elf" + ")",
+        "$(rlocationpath :" + target_name + ".elf" + ")",
         "$(rlocationpath //tools/openocd:g4_flashing_cfg)",
       ],
       
       deps = [
         "@rules_python//python/runfiles"
-      ]
+      ],
+
+      tags=["local"] 
     )
 
   native.filegroup (
