@@ -38,7 +38,7 @@ def main():
     # --- Construct and execute the command ---
     # The command is built as a list of strings to avoid shell injection issues.
     command = [
-        args.openocd_exe,
+        args.openocd_exe if "exe" not in args.openocd_exe else "../openocd.exe",
         "-f",
         args.openocd_cfg,
         "-c",
