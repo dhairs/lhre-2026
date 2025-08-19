@@ -52,7 +52,6 @@ def binary_out(name, src, visibility = None, **kwargs):
         srcs = [src],
         outs = [src + ".bin"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O binary $< $@",
-        cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O binary $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
         **kwargs
@@ -74,6 +73,27 @@ def hex_out(name, src, visibility = None, **kwargs):
         outs = [src + ".hex"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $@",
         cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
+        tools = ["@arm_none_eabi//:objcopy"],
+        visibility = visibility,
+        **kwargs
+    )
+
+def elf_out(name, src, visibility = None, **kwargs):
+    """
+    Copies input elf to an elf output.
+
+    Args:
+      name: The name of the output target. The output filename will be `name + ".elf"`.
+      src: The label of the single source file to convert.
+      visibility: The visibility of the generated rule.
+      **kwargs: Additional arguments to pass to the underlying genrule.
+    """
+    native.genrule(
+        name = name,
+        srcs = [src],
+        outs = [src + ".elf"],
+        cmd = "cp $< $@",
+        cmd_bat = "copy $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
         **kwargs
@@ -148,7 +168,7 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
 
     # Main cc_binary target for the elf file
     cc_binary(
-      name = target_name + "_elf",
+      name = target_name + "_project",
       srcs = native.glob([
           "Core/Src/**/*.c",
           "Core/Inc/**/*.h",
@@ -208,46 +228,63 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
       visibility = ["//visibility:public"],
     )
 
-    # Generate .bin and .hex files
-    firmware_outputs(
-      name = target_name + "_out",
+    # # Generate .bin and .hex files
+    # firmware_outputs(
+    #   name = target_name + "_out",
+    #   src = target_name,
+    #   project_name = project_name, # Pass the unique project name for file naming
+    # )
+    elf_out(
+      name = target_name + "_elf",
       src = target_name,
-      project_name = project_name, # Pass the unique project name for file naming
+      visibility = ["//visibility:public"],
+    )
+    hex_out(
+      name = target_name + "_hex",
+      src = target_name,
+      visibility = ["//visibility:public"],
+    )
+    binary_out(
+      name = target_name + "_bin",
+      src = target_name,
+      visibility = ["//visibility:public"],
     )
 
-    release_srcs.append(target_name + "_out")
+    release_srcs.append(target_name + "_elf")
+    release_srcs.append(target_name + "_bin")
+    release_srcs.append(target_name + "_hex")
 
-    native.genrule(
-      name = "flash",
-      # The firmware file is a source for this rule.
-      srcs = [
-          target_name + "_out",
-          # We also depend on the entire script directory from our tool.
-          # "@openocd//:scripts",
-      ],
-      # The OpenOCD executable is a "tool" for this rule. Bazel makes it
-      # available in the execution environment.
-      tools = ["@openocd//:openocd"],
-      # We create a dummy output file because genrules must create an output.
-      outs = ["flash.log"],
-      # This command is executed when you run `bazel run //src/firmware:flash`.
-      #
-      # - $(location ...) is the Bazel way to get the path to a dependency.
-      # - The -s flag tells OpenOCD where to find its scripts, which makes
-      #   the rule hermetic (it doesn't depend on a system-wide install).
-      cmd = """
-          $(location @openocd//:openocd) \
+    # native.genrule(
+    #   name = "flash",
+    #   # The firmware file is a source for this rule.
+    #   srcs = [
+    #       target_name + "_out",
+    #       # We also depend on the entire script directory from our tool.
+    #       # "@openocd//:scripts",
+    #   ],
+    #   # The OpenOCD executable is a "tool" for this rule. Bazel makes it
+    #   # available in the execution environment.
+    #   tools = ["@openocd//:openocd"],
+    #   # We create a dummy output file because genrules must create an output.
+    #   outs = ["flash.log"],
+    #   # This command is executed when you run `bazel run //src/firmware:flash`.
+    #   #
+    #   # - $(location ...) is the Bazel way to get the path to a dependency.
+    #   # - The -s flag tells OpenOCD where to find its scripts, which makes
+    #   #   the rule hermetic (it doesn't depend on a system-wide install).
+    #   cmd = """
+    #       $(location @openocd//:openocd) \
               
-              -f interface/stlink.cfg \
-              -f target/stm32f4x.cfg \
-              -c "program $(locations :%s) verify reset exit" \
-              > $@
-      """ % (target_name + "_out"),
-      # This tag is important! It tells Bazel that this rule has side-effects
-      # (flashing hardware) and should not be cached. It also allows access
-      # to local devices.
-      tags = ["local"],
-    )
+    #           -f interface/stlink.cfg \
+    #           -f target/stm32f4x.cfg \
+    #           -c "program $(locations :%s) verify reset exit" \
+    #           > $@
+    #   """ % (target_name + "_out"),
+    #   # This tag is important! It tells Bazel that this rule has side-effects
+    #   # (flashing hardware) and should not be cached. It also allows access
+    #   # to local devices.
+    #   tags = ["local"],
+    # )
 
   native.filegroup (
     name = "release",
