@@ -256,7 +256,7 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     release_srcs.append(target_name + "_hex")
 
     sh_binary(
-      name = target_name + "_openocd",
+      name = ("openocd_" + location) if location else "openocd",
       srcs = ["//tools/openocd:openocd_flashing_script"],
       data = [
           ":" + target_name + "_elf",
