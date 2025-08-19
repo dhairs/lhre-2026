@@ -145,7 +145,7 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
 
     # Main cc_binary target for the elf file
     cc_binary(
-      name = target_name + "_project",
+      name = target_name + ".elf",
       srcs = native.glob([
           "Core/Src/**/*.c",
           "Core/Inc/**/*.h",
@@ -193,14 +193,14 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     # Filegroup for the linkmap
     native.filegroup(
       name = target_name + ".out.map",
-      srcs = [":" + target_name + "_project"],
+      srcs = [":" + target_name + ".elf"],
       output_group = "linkmap",
     )
 
     # Platform transition to get the correct toolchain
     platform_transition_filegroup(
       name = target_name,
-      srcs = [target_name + "_project"],
+      srcs = [target_name + ".elf"],
       target_platform = "//:arm_none_eabi",
       visibility = ["//visibility:public"],
     )
