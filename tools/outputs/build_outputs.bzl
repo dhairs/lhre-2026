@@ -72,7 +72,7 @@ def hex_out(name, src, visibility = None, **kwargs):
         srcs = [src],
         outs = [src + ".hex"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $@",
-        cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
+        # cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
         **kwargs
