@@ -93,9 +93,7 @@ def main():
     # r.Rlocation() acts like a dictionary lookup. It takes the canonical path (the key)
     # and returns the actual, physical path to the file on disk (the value).
     # This works seamlessly on ALL platforms.
-    openocd_exe_actual_path = r.Rlocation(
-        args.openocd_canonical_path + (".exe" if sys.platform == "win32" else "")
-    )
+    openocd_exe_actual_path = r.Rlocation(args.openocd_canonical_path)
     firmware_elf_actual_path = r.Rlocation(args.firmware_canonical_path)
     openocd_cfg_actual_path = r.Rlocation(args.config_canonical_path)
 
