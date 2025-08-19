@@ -177,33 +177,31 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
-    "@@apple_support+//crosstool:setup.bzl%apple_cc_configure_extension": {
+    "//tools/openocd:openocd.bzl%openocd": {
       "general": {
-        "bzlTransitiveDigest": "E970FlMbwpgJPdPUQzatKh6BMfeE0ZpWABvwshh7Tmg=",
-        "usagesDigest": "aYRVMk+1OupIp+5hdBlpzT36qgd6ntgSxYTzMLW5K4U=",
+        "bzlTransitiveDigest": "Wc5SPr1N+H565bVD41TUo6MFUYPe7ESNhwTlpMLsDVs=",
+        "usagesDigest": "BbdS6/V0LV0Fk7mO/OL18yFSRaXPP4AkWl9z9xKiVik=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
         "generatedRepoSpecs": {
-          "local_config_apple_cc_toolchains": {
-            "repoRuleId": "@@apple_support+//crosstool:setup.bzl%_apple_cc_autoconf_toolchains",
-            "attributes": {}
-          },
-          "local_config_apple_cc": {
-            "repoRuleId": "@@apple_support+//crosstool:setup.bzl%_apple_cc_autoconf",
-            "attributes": {}
+          "openocd": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "sha256": "4f458dea82af3529d4dc71544abfd8c8c96ebe6c521868f87c6697b0866c9e99",
+              "strip_prefix": "xpack-openocd-0.12.0-6",
+              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\n\nfilegroup(\n    name = \"openocd\",\n    srcs = [\"bin/openocd\"],\n)\n\nfilegroup(\n    name = \"scripts\",\n    srcs = glob([\"openocd/scripts/**/*\"]),\n)\n",
+              "urls": [
+                "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-6/xpack-openocd-0.12.0-6-darwin-arm64.tar.gz"
+              ]
+            }
           }
         },
         "recordedRepoMappingEntries": [
           [
-            "apple_support+",
+            "",
             "bazel_tools",
             "bazel_tools"
-          ],
-          [
-            "bazel_tools",
-            "rules_cc",
-            "rules_cc+"
           ]
         ]
       }

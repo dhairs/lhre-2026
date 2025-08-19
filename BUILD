@@ -4,6 +4,8 @@ platform(
         "@platforms//cpu:arm",
         "@platforms//os:none",
     ],
+
+    visibility = ["//visibility:public"]
 )
 
 config_setting(
