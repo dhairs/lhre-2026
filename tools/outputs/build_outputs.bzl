@@ -216,14 +216,14 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     # Filegroup for the linkmap
     native.filegroup(
       name = target_name + ".out.map",
-      srcs = [":" + target_name + "_elf"],
+      srcs = [":" + target_name + "_project"],
       output_group = "linkmap",
     )
 
     # Platform transition to get the correct toolchain
     platform_transition_filegroup(
       name = target_name,
-      srcs = [target_name + "_elf"],
+      srcs = [target_name + "_project"],
       target_platform = "//:arm_none_eabi",
       visibility = ["//visibility:public"],
     )
