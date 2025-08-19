@@ -82,11 +82,11 @@ MCU_FLAGS = [
     "-mfpu=fpv4-sp-d16",
     "-mfloat-abi=hard",
 ]
-  
-def firmware_project_g4(name, linker_script, startup_script, enable_usb = False, 
-                            defines = [], extra_srcs = [], extra_deps = [], 
-                            usb_device_name = None, extra_includes = [], 
-                            enable_freertos = False, **kwargs):
+
+def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
+                            defines = [], extra_srcs = [], extra_deps = [],
+                            usb_device_name = None, extra_includes = [],
+                            enable_freertos = False, locations = [], **kwargs):
   """Creates a firmware project for the STM32G4 family of chips.
 
   Args:
@@ -100,104 +100,122 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
       usb_device_name (_type_, optional): name you want the USB driver to have. Defaults to None.
       extra_includes (list, optional): extra include paths to compile with. Defaults to [].
       enable_freertos (bool, optional): Whether or not to use FreeRTOS. Defaults to False.
+      locations (list, optional): A list of location identifiers (e.g., ["FR", "FL"]).
+                                  For each location, a separate binary will be generated
+                                  with a "BOARD_<location>" define. Defaults to [].
       **kwargs: extra args to pass to cc_binary.
   """
 
+  # --- Base configuration that applies to all variants ---
   if(usb_device_name == None):
     usb_device_name = name
-  
-  if(extra_deps == []):
-    extra_deps = []
 
-  if(extra_srcs == []):
-    extra_srcs = []
+  final_extra_srcs = extra_srcs[:]
+  final_extra_deps = extra_deps[:]
+  final_defines = defines[:]
 
   if(enable_usb):
-    extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
-    extra_deps.append("//drivers/stm32g4:usb_device_headers")
-    defines.append('USB_DEVICE_NAME_TOKEN="ELC ' + usb_device_name + '"')
+    final_extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
+    final_extra_deps.append("//drivers/stm32g4:usb_device_headers")
+    final_defines.append('USB_DEVICE_NAME_TOKEN="ELC ' + usb_device_name + '"')
 
   if(enable_freertos):
-    extra_srcs.append("//drivers/stm32g4:freertos_srcs")
-    extra_deps.append("//drivers/stm32g4:freertos_headers")
+    final_extra_srcs.append("//drivers/stm32g4:freertos_srcs")
+    final_extra_deps.append("//drivers/stm32g4:freertos_headers")
 
-  cc_binary(
-    name = name + "_project",
-    srcs = native.glob([
-        "Core/Src/**/*.c",
-        "Core/Inc/**/*.h",
-    ], allow_empty = True)
-    + [
-        # Include the HAL for compilation
-        "//drivers/stm32g4:hal_srcs",
-    ] + extra_srcs,
+  # --- Target generation logic ---
+  release_srcs = []
 
-    includes = [
-        "Core/Inc",
-    ] + extra_includes,
+  # If no locations are specified, run the original logic once.
+  if not locations:
+    locations_to_build = [None]
+  else:
+    locations_to_build = locations
 
-    deps = extra_deps + [
-        "//drivers/stm32g4:stm32_headers",
-    ],
+  for location in locations_to_build:
+    target_name = name
+    project_name = name
+    location_defines = []
 
-    # Linker options, also includes the reset handler startup file
-    linkopts = MCU_FLAGS + [
-        "-Wl,-Map=output.map,--cref",
-        "-Wl,--gc-sections",
-        "-T $(location " + linker_script + ")",
-        "$(location " + startup_script + ")",
-        "-specs=nano.specs",
-        "-lnosys",
-        "-lc",
-        "-lm"
-    ],
+    # If a location is specified, modify names and add the define
+    if location:
+      target_name = name + "_" + location
+      project_name = name + "_" + location
+      location_defines.append("BOARD_" + location)
 
-    defines = defines + ["USE_HAL_DRIVER"],
+    # Main cc_binary target for the elf file
+    cc_binary(
+      name = target_name + "_project",
+      srcs = native.glob([
+          "Core/Src/**/*.c",
+          "Core/Inc/**/*.h",
+      ], allow_empty = True)
+      + [
+          # Include the HAL for compilation
+          "//drivers/stm32g4:hal_srcs",
+      ] + final_extra_srcs,
+      includes = [
+          "Core/Inc",
+      ] + extra_includes,
+      deps = final_extra_deps + [
+          "//drivers/stm32g4:stm32_headers",
+      ],
+      linkopts = MCU_FLAGS + [
+          "-Wl,-Map=" + target_name + ".map,--cref", # Use unique map file
+          "-Wl,--gc-sections",
+          "-T $(location " + linker_script + ")",
+          "$(location " + startup_script + ")",
+          "-specs=nano.specs",
+          "-lnosys",
+          "-lc",
+          "-lm"
+      ],
+      defines = final_defines + location_defines + ["USE_HAL_DRIVER"],
+      additional_linker_inputs = [
+          linker_script,
+          startup_script,
+      ],
+      target_compatible_with = [
+          "@platforms//cpu:arm",
+          "@platforms//os:none",
+      ],
+      copts = MCU_FLAGS + [
+          "-mthumb-interwork",
+          "-ffunction-sections",
+          "-fdata-sections",
+          "-Og"
+      ],
+      visibility = ["//visibility:private"],
+      features = ["generate_linkmap"],
+      **kwargs
+    )
 
-    additional_linker_inputs = [
-        linker_script,
-        startup_script,
-    ],
+    # Filegroup for the linkmap
+    native.filegroup(
+      name = target_name + ".out.map",
+      srcs = [":" + target_name + "_project"],
+      output_group = "linkmap",
+    )
 
-    target_compatible_with = [
-        "@platforms//cpu:arm",
-        "@platforms//os:none",
-    ],
+    # Platform transition to get the correct toolchain
+    platform_transition_filegroup(
+      name = target_name,
+      srcs = [target_name + "_project"],
+      target_platform = "//:arm_none_eabi",
+      visibility = ["//visibility:public"],
+    )
 
-    copts = MCU_FLAGS + [
-        "-mthumb-interwork",
-        "-ffunction-sections",
-        "-fdata-sections",
-        "-Og"
-    ],
-  
-    visibility = ["//visibility:private"],
+    # Generate .bin and .hex files
+    firmware_outputs(
+      name = target_name + "_out",
+      src = target_name,
+      project_name = project_name, # Pass the unique project name for file naming
+    )
 
-    features = ["generate_linkmap"],
-
-    **kwargs
-  )
-
-  native.filegroup(
-    name = name + ".out.map",
-    srcs = [":" + name],
-    output_group = "linkmap",
-  )
-
-  platform_transition_filegroup(
-    name = name,
-    srcs = [name + "_project"],
-    target_platform = "//:arm_none_eabi",
-    visibility = ["//visibility:public"],
-  )
-  
-  firmware_outputs(
-    name = name + "_out",
-    src = name,
-    project_name = name,
-  )
+    release_srcs.append(target_name + "_out")
 
   native.filegroup (
-    name = "release",
-    srcs = [name + "_out"],
+    name = name + "_release",
+    srcs = release_srcs,
+    visibility = ["//visibility:public"],
   )
