@@ -215,7 +215,7 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     release_srcs.append(target_name + "_out")
 
   native.filegroup (
-    name = name + "_release",
+    name = "release",
     srcs = release_srcs,
     visibility = ["//visibility:public"],
   )
