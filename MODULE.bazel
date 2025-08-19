@@ -6,6 +6,7 @@ bazel_dep(name = "toolchains_arm_gnu", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.0")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.20.0")
+bazel_dep(name = "googletest", version = "1.17.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
 arm_toolchain = use_extension("@toolchains_arm_gnu//:extensions.bzl", "arm_toolchain")
