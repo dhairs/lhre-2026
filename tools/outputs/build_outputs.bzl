@@ -266,10 +266,14 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
         ],
 
       args = [
-        "$(location @openocd//:openocd)",
-        "$(location :" + target_name + "_elf" + ")",
-        "$(location //tools/openocd:g4_flashing_cfg)",
+        "+openocd+openocd/bin/openocd",
+        "_main/VCU/firmware/vcu_firmware_2026.elf",
+        "_main/tools/openocd/stm32g4.cfg",
       ],
+
+      deps = [
+        "@rules_python//python/runfiles",
+      ]
     )
 
   native.filegroup (
