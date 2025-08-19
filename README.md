@@ -44,7 +44,7 @@ git push origin <Project_Name>/vX.Y.Z
 
 Replace `<Project_Name>` with the bazel package of the project. Note that the
 project has to have a `:release` target. In the VCU firmware's case, we would
-use `VCU/firmware/v.X.Y.X`. Replace `X.Y.Z` with the desired version number.
+use `VCU/firmware/vX.Y.Z`. Replace `X.Y.Z` with the desired version number.
 
 ## Contributing
 
