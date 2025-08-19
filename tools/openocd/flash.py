@@ -9,6 +9,7 @@ This script is an equivalent of the provided bash script.
 import argparse
 import subprocess
 import sys
+import os
 
 
 def main():
@@ -28,6 +29,7 @@ def main():
 
     # --- Print information for clarity ---
     print("--- Flashing Firmware ---")
+    print(f"Working Directory:  {os.getcwd()}")
     print(f"OpenOCD Executable: {args.openocd_exe}")
     print(f"Firmware: {args.firmware_elf}")
     print(f"OpenOCD Config: {args.openocd_cfg}")

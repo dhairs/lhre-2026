@@ -262,7 +262,6 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
       data = [
           ":" + target_name + "_elf",
           "@openocd//:openocd",
-          "@openocd//:scripts",
           "//tools/openocd:g4_flashing_cfg",
         ],
 
