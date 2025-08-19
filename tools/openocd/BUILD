@@ -11,5 +11,3 @@ filegroup(
     srcs = ["stm32g4.cfg"],
     visibility = ["//visibility:public"],
 )
-
-exports_files(["flash.py"])

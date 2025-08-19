@@ -255,43 +255,20 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     release_srcs.append(target_name + "_bin")
     release_srcs.append(target_name + "_hex")
 
-    # py_binary(
-    #   name = ("openocd_" + location) if location else "openocd",
-    #   srcs = ["//tools/openocd:openocd_flashing_script"],
-    #   main = "flash.py",
-    #   data = [
-    #       ":" + target_name + "_elf",
-    #       "@openocd//:openocd",
-    #       "//tools/openocd:g4_flashing_cfg",
-    #     ],
-
-    #   args = [
-    #     "$(location @openocd//:openocd)",
-    #     "$(location :" + target_name + "_elf" + ")",
-    #     "$(location //tools/openocd:g4_flashing_cfg)",
-    #   ],
-    # )
-
     py_binary(
       name = ("openocd_" + location) if location else "openocd",
       srcs = ["//tools/openocd:openocd_flashing_script"],
-      # The main attribute expects a label, not a filename. Assuming your file is flash.py
-      # and is located in //tools/openocd, it should be:
-      main = "//tools/openocd:flash.py",
-      # Add the runfiles library dependency
-      deps = ["@rules_python//python/runfiles"],
+      main = "flash.py",
       data = [
           ":" + target_name + "_elf",
           "@openocd//:openocd",
           "//tools/openocd:g4_flashing_cfg",
         ],
-      # Pass the WORKSPACE-relative paths. The runfiles library will resolve these.
+
       args = [
-        # The path for an external repo is <repo_name>/<path_within_repo>
-        "openocd/bin/openocd.exe",
-        # The path for a local target is its full label path
-        "tools/openocd/" + target_name + "_elf",
-        "tools/openocd/g4_flashing_cfg",
+        "$(location @openocd//:openocd)",
+        "$(location :" + target_name + "_elf" + ")",
+        "$(location //tools/openocd:g4_flashing_cfg)",
       ],
     )
 
