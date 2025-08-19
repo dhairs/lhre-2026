@@ -1,6 +1,42 @@
 """Macro for creating binary and hex files using objcopy."""
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
+    """
+    Runs objcopy to convert a source file into both .bin and .hex files.
+
+    Args:
+      name: The name of the output target.
+      src: The label of the single source file to convert.
+      project_name: The name of the project.
+      visibility: visibility of the target,
+      **kwargs: extra args to pass to genrule.
+    """
+    # Define the output filenames based on the rule's name
+    bin_out = project_name + ".bin"
+    hex_out = project_name + ".hex"
+    elf_out = project_name + ".elf"
+
+    command = ("$(execpath @arm_none_eabi//:objcopy) -O binary $< $(location %s) && " +
+               "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $(location %s) &&" + 
+               "cp $< $(location %s)") % (bin_out, hex_out, elf_out)
+
+    native.genrule(
+        name = name,
+        srcs = [src],
+        outs = [
+            bin_out,
+            hex_out,
+            elf_out,
+        ],
+        cmd = command,
+        tools = ["@arm_none_eabi//:objcopy"],
+        visibility = visibility,
+        **kwargs
+    )
 
 def binary_out(name, src, visibility = None, **kwargs):
     """
@@ -13,11 +49,10 @@ def binary_out(name, src, visibility = None, **kwargs):
       **kwargs: Additional arguments to pass to the underlying genrule.
     """
     native.genrule(
-        name = name,
+        name = name + "_bin",
         srcs = [src],
-        outs = [src + ".bin"],
+        outs = [name + ".bin"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O binary $< $@",
-        cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O binary $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
         **kwargs
@@ -34,11 +69,32 @@ def hex_out(name, src, visibility = None, **kwargs):
       **kwargs: Additional arguments to pass to the underlying genrule.
     """
     native.genrule(
-        name = name,
+        name = name + "_hex",
         srcs = [src],
-        outs = [src + ".hex"],
+        outs = [name + ".hex"],
         cmd = "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $@",
-        cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
+        # cmd_bat = "copy \"$(location @arm_none_eabi//:objcopy)\" objcopy.exe && objcopy.exe -O ihex $< $@",
+        tools = ["@arm_none_eabi//:objcopy"],
+        visibility = visibility,
+        **kwargs
+    )
+
+def elf_out(name, src, visibility = None, **kwargs):
+    """
+    Copies input elf to an elf output.
+
+    Args:
+      name: The name of the output target. The output filename will be `name + ".elf"`.
+      src: The label of the single source file to convert.
+      visibility: The visibility of the generated rule.
+      **kwargs: Additional arguments to pass to the underlying genrule.
+    """
+    native.genrule(
+        name = name + "_elf",
+        srcs = [src],
+        outs = [name + ".elf"],
+        cmd = "cp $< $@",
+        cmd_bat = "copy $< $@",
         tools = ["@arm_none_eabi//:objcopy"],
         visibility = visibility,
         **kwargs
@@ -50,11 +106,11 @@ MCU_FLAGS = [
     "-mfpu=fpv4-sp-d16",
     "-mfloat-abi=hard",
 ]
-  
-def firmware_project_g4(name, linker_script, startup_script, enable_usb = False, 
-                            defines = [], extra_srcs = [], extra_deps = [], 
-                            usb_device_name = None, extra_includes = [], 
-                            enable_freertos = False, **kwargs):
+
+def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
+                            defines = [], extra_srcs = [], extra_deps = [],
+                            usb_device_name = None, extra_includes = [],
+                            enable_freertos = False, locations = [], **kwargs):
   """Creates a firmware project for the STM32G4 family of chips.
 
   Args:
@@ -68,102 +124,162 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
       usb_device_name (_type_, optional): name you want the USB driver to have. Defaults to None.
       extra_includes (list, optional): extra include paths to compile with. Defaults to [].
       enable_freertos (bool, optional): Whether or not to use FreeRTOS. Defaults to False.
+      locations (list, optional): A list of location identifiers (e.g., ["FR", "FL"]).
+                                  For each location, a separate binary will be generated
+                                  with a "BOARD_<location>" define. Defaults to [].
       **kwargs: extra args to pass to cc_binary.
   """
 
+  # --- Base configuration that applies to all variants ---
   if(usb_device_name == None):
     usb_device_name = name
-  
-  if(extra_deps == []):
-    extra_deps = []
 
-  if(extra_srcs == []):
-    extra_srcs = []
+  final_extra_srcs = extra_srcs[:]
+  final_extra_deps = extra_deps[:]
+  final_defines = defines[:]
 
   if(enable_usb):
-    extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
-    extra_deps.append("//drivers/stm32g4:usb_device_headers")
-    defines.append('USB_DEVICE_NAME_TOKEN="ELC ' + usb_device_name + '"')
+    final_extra_srcs.append("//drivers/stm32g4:usb_device_srcs")
+    final_extra_deps.append("//drivers/stm32g4:usb_device_headers")
+    final_defines.append('USB_DEVICE_NAME_TOKEN="ELC ' + usb_device_name + '"')
 
   if(enable_freertos):
-    extra_srcs.append("//drivers/stm32g4:freertos_srcs")
-    extra_deps.append("//drivers/stm32g4:freertos_headers")
+    final_extra_srcs.append("//drivers/stm32g4:freertos_srcs")
+    final_extra_deps.append("//drivers/stm32g4:freertos_headers")
 
-  cc_binary(
-    name = name,
-    srcs = native.glob([
-        "Core/Src/**/*.c",
-        "Core/Inc/**/*.h",
-    ], allow_empty = True)
-    + [
-        # Include the HAL for compilation
-        "//drivers/stm32g4:hal_srcs",
-    ] + extra_srcs,
+  # --- Target generation logic ---
+  release_srcs = []
 
-    includes = [
-        "Core/Inc",
-    ] + extra_includes,
+  # If no locations are specified, run the original logic once.
+  if not locations:
+    locations_to_build = [None]
+  else:
+    locations_to_build = locations
 
-    deps = extra_deps + [
-        "//drivers/stm32g4:stm32_headers",
-    ],
+  for location in locations_to_build:
+    target_name = name
+    project_name = name
+    location_defines = []
 
-    # Linker options, also includes the reset handler startup file
-    linkopts = MCU_FLAGS + [
-        "-Wl,-Map=output.map,--cref",
-        "-Wl,--gc-sections",
-        "-Wl,--no-warn-rwx-segments",
-        "-T $(location " + name + "_link_script" + ")",
-        "$(location " + name + "_startup_script" + ")",
-        "-specs=nano.specs",
-        "-lnosys",
-        "-lc",
-        "-lm"
-    ],
+    # If a location is specified, modify names and add the define
+    if location:
+      target_name = name + "_" + location
+      project_name = name + "_" + location
+      location_defines.append("BOARD_" + location)
 
-    defines = defines + ["USE_HAL_DRIVER"],
+    # Main cc_binary target for the elf file
+    cc_binary(
+      name = target_name + "_project",
+      srcs = native.glob([
+          "Core/Src/**/*.c",
+          "Core/Inc/**/*.h",
+      ], allow_empty = True)
+      + [
+          # Include the HAL for compilation
+          "//drivers/stm32g4:hal_srcs",
+      ] + final_extra_srcs,
+      includes = [
+          "Core/Inc",
+      ] + extra_includes,
+      deps = final_extra_deps + [
+          "//drivers/stm32g4:stm32_headers",
+      ],
+      linkopts = MCU_FLAGS + [
+          "-Wl,-Map=" + target_name + ".map,--cref", # Use unique map file
+          "-Wl,--gc-sections",
+          "-T $(location " + linker_script + ")",
+          "$(location " + startup_script + ")",
+          "-specs=nano.specs",
+          "-lnosys",
+          "-lc",
+          "-lm"
+      ],
+      defines = final_defines + location_defines + ["USE_HAL_DRIVER"],
+      additional_linker_inputs = [
+          linker_script,
+          startup_script,
+      ],
+      target_compatible_with = [
+          "@platforms//cpu:arm",
+          "@platforms//os:none",
+      ],
+      copts = MCU_FLAGS + [
+          "-mthumb-interwork",
+          "-ffunction-sections",
+          "-fdata-sections",
+          "-Og"
+      ],
+      visibility = ["//visibility:private"],
+      features = ["generate_linkmap"],
+      **kwargs
+    )
 
-    additional_linker_inputs = [
-        name + "_link_script",
-        name + "_startup_script",
-    ],
+    # Filegroup for the linkmap
+    native.filegroup(
+      name = target_name + ".out.map",
+      srcs = [":" + target_name + "_project"],
+      output_group = "linkmap",
+    )
 
-    target_compatible_with = [
-        "@platforms//cpu:arm",
-        "@platforms//os:none",
-    ],
+    # Platform transition to get the correct toolchain
+    platform_transition_filegroup(
+      name = target_name,
+      srcs = [target_name + "_project"],
+      target_platform = "//:arm_none_eabi",
+      visibility = ["//visibility:public"],
+    )
 
-    copts = MCU_FLAGS + [
-        "-mthumb-interwork",
-        "-ffunction-sections",
-        "-fdata-sections",
-        "-Og"
-    ],
-  
+    # # Generate .bin and .hex files
+    # firmware_outputs(
+    #   name = target_name + "_out",
+    #   src = target_name,
+    #   project_name = project_name, # Pass the unique project name for file naming
+    # )
+    elf_out(
+      name = project_name,
+      src = target_name,
+      visibility = ["//visibility:public"],
+    )
+    hex_out(
+      name = project_name,
+      src = target_name,
+      visibility = ["//visibility:public"],
+    )
+    binary_out(
+      name = project_name,
+      src = target_name,
+      visibility = ["//visibility:public"],
+    )
+
+    release_srcs.append(target_name + ".elf")
+    release_srcs.append(target_name + ".bin")
+    release_srcs.append(target_name + ".hex")
+
+    py_binary(
+      name = ("openocd_" + location) if location else "openocd",
+      srcs = ["//tools/openocd:openocd_flashing_script"],
+      main = "flash.py",
+      data = [
+          ":" + target_name + ".elf",
+          "@openocd//:openocd",
+          "//tools/openocd:g4_flashing_cfg",
+        ],
+
+      args = [
+        "$(rlocationpath @openocd//:openocd)",
+        "$(rlocationpath :" + target_name + ".elf" + ")",
+        "$(rlocationpath //tools/openocd:g4_flashing_cfg)",
+      ],
+      
+      deps = [
+        "@rules_python//python/runfiles"
+      ],
+
+      tags=["local"] 
+    )
+
+  native.filegroup (
+    name = "release",
+    srcs = release_srcs,
     visibility = ["//visibility:public"],
-
-    features = ["generate_linkmap"],
-
-    **kwargs
-  )
-
-  native.filegroup(
-    name = name + ".out.map",
-    srcs = [":" + name],
-    output_group = "linkmap",
-  )
-
-  native.filegroup(
-    name = name + "_link_script",
-    srcs = [linker_script],
-  )
-
-  native.filegroup(
-    name = name + "_startup_script",
-    srcs = [startup_script],
-  )
-
-  binary_out(
-    name = name + "_bin",
-    src = name,
   )
