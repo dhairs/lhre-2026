@@ -266,13 +266,13 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
         ],
 
       args = [
-        "+openocd+openocd/bin/openocd",
-        "_main/VCU/firmware/vcu_firmware_2026.elf",
-        "_main/tools/openocd/stm32g4.cfg",
+        "$(rlocationpath @openocd//:openocd)",
+        "$(rlocationpath :" + target_name + "_elf" + ")",
+        "$(rlocationpath //tools/openocd:g4_flashing_cfg)",
       ],
-
+      
       deps = [
-        "@rules_python//python/runfiles",
+        "@rules_python//python/runfiles"
       ]
     )
 

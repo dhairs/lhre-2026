@@ -1,6 +1,3 @@
-# #!/usr/bin/env python3
-# # -*- coding: utf-8 -*-
-
 # """
 # A Python script to flash firmware using OpenOCD.
 # This script is an equivalent of the provided bash script.
@@ -70,8 +67,6 @@
 
 # if __name__ == "__main__":
 #     main()
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import argparse
 import subprocess
