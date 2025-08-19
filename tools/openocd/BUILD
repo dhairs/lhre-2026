@@ -2,7 +2,7 @@
 
 filegroup(
     name = "openocd_flashing_script",
-    srcs = ["flash.sh"],
+    srcs = ["flash.py"],
     visibility = ["//visibility:public"],
 )
 

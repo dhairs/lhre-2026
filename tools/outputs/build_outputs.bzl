@@ -2,7 +2,7 @@
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
     """
@@ -255,9 +255,10 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     release_srcs.append(target_name + "_bin")
     release_srcs.append(target_name + "_hex")
 
-    sh_binary(
+    py_binary(
       name = ("openocd_" + location) if location else "openocd",
       srcs = ["//tools/openocd:openocd_flashing_script"],
+      main = "flash.py",
       data = [
           ":" + target_name + "_elf",
           "@openocd//:openocd",
