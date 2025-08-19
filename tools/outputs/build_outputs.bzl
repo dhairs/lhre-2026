@@ -17,9 +17,11 @@ def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
     # Define the output filenames based on the rule's name
     bin_out = project_name + ".bin"
     hex_out = project_name + ".hex"
+    elf_out = project_name + ".elf"
 
     command = ("$(execpath @arm_none_eabi//:objcopy) -O binary $< $(location %s) && " +
-               "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $(location %s)") % (bin_out, hex_out)
+               "$(execpath @arm_none_eabi//:objcopy) -O ihex $< $(location %s) &&" + 
+               "cp $< $(location %s)") % (bin_out, hex_out, elf_out)
 
     native.genrule(
         name = name,
@@ -27,6 +29,7 @@ def firmware_outputs(name, src, project_name, visibility = None, **kwargs):
         outs = [
             bin_out,
             hex_out,
+            elf_out,
         ],
         cmd = command,
         tools = ["@arm_none_eabi//:objcopy"],
@@ -145,7 +148,7 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
 
     # Main cc_binary target for the elf file
     cc_binary(
-      name = target_name + ".elf",
+      name = target_name + "_elf",
       srcs = native.glob([
           "Core/Src/**/*.c",
           "Core/Inc/**/*.h",
@@ -193,14 +196,14 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     # Filegroup for the linkmap
     native.filegroup(
       name = target_name + ".out.map",
-      srcs = [":" + target_name + ".elf"],
+      srcs = [":" + target_name + "_elf"],
       output_group = "linkmap",
     )
 
     # Platform transition to get the correct toolchain
     platform_transition_filegroup(
       name = target_name,
-      srcs = [target_name + ".elf"],
+      srcs = [target_name + "_elf"],
       target_platform = "//:arm_none_eabi",
       visibility = ["//visibility:public"],
     )
@@ -213,6 +216,38 @@ def firmware_project_g4(name, linker_script, startup_script, enable_usb = False,
     )
 
     release_srcs.append(target_name + "_out")
+
+    native.genrule(
+      name = "flash",
+      # The firmware file is a source for this rule.
+      srcs = [
+          target_name + "_out",
+          # We also depend on the entire script directory from our tool.
+          # "@openocd//:scripts",
+      ],
+      # The OpenOCD executable is a "tool" for this rule. Bazel makes it
+      # available in the execution environment.
+      tools = ["@openocd//:openocd"],
+      # We create a dummy output file because genrules must create an output.
+      outs = ["flash.log"],
+      # This command is executed when you run `bazel run //src/firmware:flash`.
+      #
+      # - $(location ...) is the Bazel way to get the path to a dependency.
+      # - The -s flag tells OpenOCD where to find its scripts, which makes
+      #   the rule hermetic (it doesn't depend on a system-wide install).
+      cmd = """
+          $(location @openocd//:openocd) \
+              
+              -f interface/stlink.cfg \
+              -f target/stm32f4x.cfg \
+              -c "program $(locations :%s) verify reset exit" \
+              > $@
+      """ % (target_name + "_out"),
+      # This tag is important! It tells Bazel that this rule has side-effects
+      # (flashing hardware) and should not be cached. It also allows access
+      # to local devices.
+      tags = ["local"],
+    )
 
   native.filegroup (
     name = "release",

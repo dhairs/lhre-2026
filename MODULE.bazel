@@ -37,3 +37,7 @@ git_override(
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
     commit = "abb61a688167623088f8768cc9264798df6a9d10",
 )
+
+# Hermetic OpenOCD
+openocd = use_extension("//tools/openocd:openocd.bzl", "openocd")
+use_repo(openocd, "openocd")

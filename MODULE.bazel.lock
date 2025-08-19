@@ -164,6 +164,35 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//tools/openocd:openocd.bzl%openocd": {
+      "general": {
+        "bzlTransitiveDigest": "Wc5SPr1N+H565bVD41TUo6MFUYPe7ESNhwTlpMLsDVs=",
+        "usagesDigest": "BbdS6/V0LV0Fk7mO/OL18yFSRaXPP4AkWl9z9xKiVik=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "openocd": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "sha256": "4f458dea82af3529d4dc71544abfd8c8c96ebe6c521868f87c6697b0866c9e99",
+              "strip_prefix": "xpack-openocd-0.12.0-6",
+              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\n\nfilegroup(\n    name = \"openocd\",\n    srcs = [\"bin/openocd\"],\n)\n\nfilegroup(\n    name = \"scripts\",\n    srcs = glob([\"openocd/scripts/**/*\"]),\n)\n",
+              "urls": [
+                "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-6/xpack-openocd-0.12.0-6-darwin-arm64.tar.gz"
+              ]
+            }
+          }
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "",
+            "bazel_tools",
+            "bazel_tools"
+          ]
+        ]
+      }
+    },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
         "bzlTransitiveDigest": "hUTp2w+RUVdL7ma5esCXZJAFnX7vLbVfLd7FwnQI6bU=",
