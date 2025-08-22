@@ -8,6 +8,14 @@ platform(
     visibility = ["//visibility:public"]
 )
 
+filegroup (
+    name = "release",
+    srcs = [
+        "//VCU/firmware:release",
+        "//HDV/firmware:release",
+    ]
+)
+
 config_setting(
     name = "windows",
     constraint_values = ["@platforms//os:windows"],
