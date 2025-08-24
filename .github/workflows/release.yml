@@ -39,7 +39,6 @@ jobs:
             TAG_PATTERN="v*"
           fi
 
-
           echo "Current tag: ${FULL_TAG}"
           echo "Project component: ${PROJECT_NAME}"
           echo "Tag pattern: ${TAG_PATTERN}"
