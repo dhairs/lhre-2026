@@ -95,7 +95,7 @@ jobs:
           fi
 
           echo "Building main target: ${MAIN_TARGET}"
-          bazel build ${MAIN_TARGET} --config=release
+          bazel build ${MAIN_TARGET}
 
           echo "Uploading assets..."
           # Using the upload_url from the create_release step is more robust
